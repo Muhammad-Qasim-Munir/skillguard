@@ -25,9 +25,9 @@ Act as a security reviewer for **Skills** (a `SKILL.md` + bundled `scripts/`, `r
    - Prefer the bundled scanner to get a fast baseline report:
 
 ```bash
-python3 scripts/skillguard.py /path/to/skill-folder
+python3 skillguard.py /path/to/skill-folder
 # or
-python3 scripts/skillguard.py /path/to/file.skill
+python3 skillguard.py /path/to/file.skill
 ```
 
    - The scanner writes `SECURITY_REVIEW.md` next to the scanned target (disable with `--no-write`).

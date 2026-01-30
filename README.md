@@ -18,13 +18,13 @@ cd skillguard
 
 ```bash
 # Scan a single Skill folder
-python3 scripts/skillguard.py /path/to/skill-folder
+python3 skillguard.py /path/to/skill-folder
 
 # Scan a packaged .skill file
-python3 scripts/skillguard.py /path/to/file.skill
+python3 skillguard.py /path/to/file.skill
 
 # JSON output for automation
-python3 scripts/skillguard.py /path/to/skill --format json --output report.json
+python3 skillguard.py /path/to/skill --format json --output report.json
 ```
 
 ## What It Detects
@@ -61,21 +61,21 @@ python3 scripts/skillguard.py /path/to/skill --format json --output report.json
 Human-readable report with color-coded severity levels:
 
 ```bash
-python3 scripts/skillguard.py /path/to/skill
+python3 skillguard.py /path/to/skill
 ```
 
 ### JSON
 Machine-readable format for automation:
 
 ```bash
-python3 scripts/skillguard.py /path/to/skill --format json --output report.json
+python3 skillguard.py /path/to/skill --format json --output report.json
 ```
 
 ### Table
 Simple markdown table format:
 
 ```bash
-python3 scripts/skillguard.py /path/to/skill --format table
+python3 skillguard.py /path/to/skill --format table
 ```
 
 ## Command Line Options

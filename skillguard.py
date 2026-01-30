@@ -3,15 +3,14 @@
 SkillGuard - Static security scanner for Claude/Cursor Skills.
 
 Usage:
-  python3 scripts/skillguard.py /path/to/skill-folder
-  python3 scripts/skillguard.py /path/to/file.skill
-  python3 scripts/skillguard.py /path/to/skill --format json --output report.json
-  python3 scripts/skillguard.py /path/to/skill --format sarif --fail-on-findings
+  python3 skillguard.py /path/to/skill-folder
+  python3 skillguard.py /path/to/file.skill
+  python3 skillguard.py /path/to/skill --format json --output report.json
 
 Outputs a markdown report to stdout and (by default) writes SECURITY_REVIEW.md
 into the scanned folder (or next to the .skill file when scanning an archive).
 
-Supports multiple output formats: markdown (default), json, sarif, table.
+Supports multiple output formats: markdown (default), json, table.
 """
 
 from __future__ import annotations
@@ -419,17 +418,6 @@ def _severity_rank(sev: str) -> int:
     return {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}.get(sev, 4)
 
 
-def _severity_to_sarif_level(sev: str) -> str:
-    """Convert our severity to SARIF level."""
-    mapping = {
-        "CRITICAL": "error",
-        "HIGH": "error",
-        "MEDIUM": "warning",
-        "LOW": "note",
-    }
-    return mapping.get(sev, "note")
-
-
 def _severity_color(severity: str) -> str:
     """Get color code for severity level."""
     colors = {
@@ -544,65 +532,6 @@ def _format_json(findings: List[Finding], notes: List[str], target: str) -> str:
     return json.dumps(data, indent=2)
 
 
-def _format_sarif(findings: List[Finding], notes: List[str], target: str) -> str:
-    """Format findings as SARIF for CI/CD integration."""
-    # SARIF schema version 2.1.0
-    sarif = {
-        "version": "2.1.0",
-        "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-        "runs": [
-            {
-                "tool": {
-                    "driver": {
-                        "name": "skillguard",
-                        "informationUri": "https://github.com/anthropics/skills",
-                        "version": "1.0.0",
-                        "rules": {},
-                    }
-                },
-                "results": [],
-                "invocations": [
-                    {
-                        "executionSuccessful": True,
-                        "exitCode": 0 if not any(f.severity in ("CRITICAL", "HIGH") for f in findings) else 1,
-                    }
-                ],
-            }
-        ],
-    }
-
-    # Build rules dictionary
-    rules = {}
-    for f in findings:
-        if f.rule_id not in rules:
-            rules[f.rule_id] = {
-                "id": f.rule_id,
-                "name": f.kind,
-                "shortDescription": {"text": f.message or f.kind},
-                "defaultConfiguration": {"level": _severity_to_sarif_level(f.severity)},
-            }
-    sarif["runs"][0]["tool"]["driver"]["rules"] = rules
-
-    # Build results
-    for f in findings:
-        result = {
-            "ruleId": f.rule_id,
-            "level": _severity_to_sarif_level(f.severity),
-            "message": {"text": f.message or f.excerpt},
-            "locations": [
-                {
-                    "physicalLocation": {
-                        "artifactLocation": {"uri": f.path},
-                        "region": {"startLine": f.line} if f.line else {},
-                    }
-                }
-            ],
-        }
-        sarif["runs"][0]["results"].append(result)
-
-    return json.dumps(sarif, indent=2)
-
-
 def _format_table(findings: List[Finding]) -> str:
     """Format findings as a table."""
     if not findings:
@@ -623,7 +552,7 @@ def _format_table(findings: List[Finding]) -> str:
 def _collect_files(root: Path) -> List[Path]:
     paths: List[Path] = []
     # Files to exclude from scanning
-    exclude_names = {"SECURITY_REVIEW.md", "SECURITY_REVIEW.json", "SECURITY_REVIEW.sarif"}
+    exclude_names = {"SECURITY_REVIEW.md", "SECURITY_REVIEW.json"}
     
     for p in root.rglob("*"):
         if p.is_file():
@@ -677,8 +606,6 @@ def _render_report(
     """Render report in specified format."""
     if format_type == "json":
         return _format_json(findings, notes, target_label)
-    elif format_type == "sarif":
-        return _format_sarif(findings, notes, target_label)
     elif format_type == "table":
         return _format_table(findings)
     
@@ -757,13 +684,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 Output formats:
   markdown  - Human-readable markdown report (default)
   json      - Machine-readable JSON format
-  sarif     - SARIF 2.1.0 format for CI/CD integration
   table     - Simple markdown table format
 
 Examples:
   %(prog)s /path/to/skill
   %(prog)s /path/to/skill --format json --output report.json
-  %(prog)s /path/to/skill --format sarif --fail-on-findings
         """,
     )
     ap.add_argument("target", help="Path to a Skill folder (containing SKILL.md) or a .skill file (zip).")
@@ -774,7 +699,7 @@ Examples:
     )
     ap.add_argument(
         "--format",
-        choices=["markdown", "json", "sarif", "table"],
+        choices=["markdown", "json", "table"],
         default="markdown",
         help="Output format (default: markdown)",
     )
@@ -827,8 +752,6 @@ Examples:
     else:
         if args.format == "json":
             output_path = write_dir / "SECURITY_REVIEW.json"
-        elif args.format == "sarif":
-            output_path = write_dir / "SECURITY_REVIEW.sarif"
         elif args.format == "table":
             output_path = write_dir / "SECURITY_REVIEW.md"
         else:
