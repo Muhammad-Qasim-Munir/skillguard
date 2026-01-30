@@ -10,7 +10,7 @@
 
 ```bash
 # Clone or download SkillGuard
-https://github.com/Muhammad-Qasim-Munir/skillguard.git
+git clone https://github.com/Muhammad-Qasim-Munir/skillguard.git
 cd skillguard
 ```
 
